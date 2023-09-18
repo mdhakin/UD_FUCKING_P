@@ -2,7 +2,6 @@
 #include <iostream>
 #include <string>
 #include <cstdlib>
-//#include "udp.h"
 
 ByteMessage M100(mesSize);  // trk1
 ByteMessage M101(mesSize);  // trk2
@@ -22,6 +21,14 @@ ByteMessage M114(mesSize);  // error
 
 ByteMessage* frames[15];
 
+
+void printCoreData()
+{
+    for(int i = 0;i<15;i++)
+    {
+        std::cout << "Bytemessage: " << (*frames[i]).getName() << "  " << (*frames[i]).copyOfString() << "  String length " << (*frames[i]).len  << std::endl;
+    }
+}
 
 // device id refers to the crawler or laptop or sbc
 std::string formatTrackInstruction(std::string MessageID, std::string deviceID, std::string trackID, int value, std::string direction) 
@@ -108,16 +115,7 @@ void initMessages()
     frames[13] = &M113;
     frames[14] = &M114;
 
-    //std::cout << "Bytemessage: " << (*frames[0]).getName() << "  " << (*msgs[0]).copyOfString() << "  String length " << (*msgs[0]).len  << std::endl;
-    
-
-    for(int i = 0;i<15;i++)
-    {
-        std::cout << "Bytemessage: " << (*frames[i]).getName() << "  " << (*frames[i]).copyOfString() << "  String length " << (*frames[i]).len  << std::endl;
-    }
-
-    
-    
+   
 
 }
 

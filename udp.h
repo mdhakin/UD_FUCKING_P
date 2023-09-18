@@ -13,6 +13,7 @@ void PrintData();
 void PrintDataBytes();
 void PrintDataSize();
 void launchPad(int argc, char* argv[]);
+void printCoreData();
 
 std::vector<std::string> splitIt(const std::string &s, char delimiter) {
     std::vector<std::string> tokens;

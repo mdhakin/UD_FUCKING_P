@@ -8,7 +8,6 @@
 #include <cstdint>
 #include <cstring>
 #include <chrono>
-
 #include "msg.cpp"
 
 using boost::asio::ip::udp;
@@ -17,31 +16,70 @@ const int ByteMessageSise = 25;
 
 std::atomic<bool> receiver_running(true);
 std::atomic<bool> cli_running(true);
+std::atomic<bool> sender_running(true);
+std::atomic<bool> heart_beat_running(true);
+
+std::atomic<bool> bEcho(true);
+
+
 std::mutex mutex;
 std::string sessionLabel = "default";
 std::string thisip = "192.168.1.30";
 std::string remoteip = "255.255.255.255";
 std::string sLocalPort = "12345";
 std::string sRemotePort = "12346";
+
+
+
 int port_no = 12345;
 int loop_speed = 20;
-
+int64_t heartbeatloopspeed = 1500;
+int toggleVale = 1;
+bool laptopconnected = false;
 std::vector<std::string> messages; // shared data structure
 
 ByteMessage Data(ByteMessageSise);
-
-
+ByteMessage heartbeatMutex(1);
 
 int main(int argc, char* argv[])
 {
-    
         initMessages();
         launchPad(argc,argv);
-    //
-    
+
     return 0;
 }
 
+
+
+void heartbeat()
+{
+    
+    while(heart_beat_running)
+    {
+        //std::cout << "heartbeat ";
+        bool bFound = false;
+        for(int i = 0;i<10;i++)
+        {
+            if(heartbeatMutex.copyOfString() == "L")
+            {
+                bFound = true;
+            }
+            std::this_thread::sleep_for(std::chrono::milliseconds((int64_t)40));
+        }
+        if(bFound && !laptopconnected)
+        {
+            laptopconnected = true;
+            std::cout << "Control link established" << std::endl;
+        }else if(laptopconnected && !bFound)
+        {
+            std::cout << "Control link lost, Putting into safe state." << std::endl;
+            laptopconnected = false;
+        }
+        //std::cout << heartbeatMutex.copyOfString() << std::endl;
+        heartbeatMutex.LoadString("");
+        std::this_thread::sleep_for(std::chrono::milliseconds(heartbeatloopspeed)); // wait for 1 second before sending next message
+    }
+}
 
 void launchPad(int argc, char* argv[])
 {
@@ -62,19 +100,25 @@ void launchPad(int argc, char* argv[])
     std::cout << "Port" <<  sLocalPort << std::endl;
     std::cout << "Target Ip Address " <<  remoteip << std::endl;
     std::cout << "Target Port " <<  sRemotePort << std::endl;
-    //std::thread send_thread(send_thread_func);
+    
     Data.LoadString("");
-
+    heartbeatMutex.LoadString("");
+   // std::thread send_thread(send_thread_func2);
     std::thread receive_thread(receive_thread_func);
     std::thread mnloop(mainloop);
+    std::thread heart_beat(heartbeat);
 
+    // send_thread.join();
     receive_thread.join();
+    heart_beat.join();
     mnloop.join();
+
 }
 
 void mainloop()
 {
      std::string command;
+     
     // Command line loop to modify the data array
     while (cli_running)
     {
@@ -84,14 +128,17 @@ void mainloop()
         if (command == "quit" || command == "q" || command == "e")
         {
             std::cout << "quit " << std::endl;
+            sender_running = false;
             receiver_running = false;
             cli_running = false;
+            heart_beat_running = false;
             send_quit();
+            std::this_thread::sleep_for(std::chrono::milliseconds((int64_t)20));
             break;
         }else if(command == "data")
         {
             command = "";
-            PrintData();
+            printCoreData();
         }else if(command == "databytes")
         {
             command = "";
@@ -107,6 +154,14 @@ void mainloop()
             std::cout << "Port" <<  sLocalPort << std::endl;
             std::cout << "Target Ip Address " <<  remoteip << std::endl;
             std::cout << "Target Port " <<  sRemotePort << std::endl;
+        }else if(command == "echooff")
+        {
+            bool bEcho = false;
+            std::cout << "ECHO OFF" <<  std::endl;
+        }else if(command == "echoon")
+        {
+            bool bEcho = true;
+            std::cout << "ECHO ON" <<  std::endl;
         }
         else
         {
@@ -114,12 +169,9 @@ void mainloop()
             command = "";
             std::cout << "Data sent\n" << std::endl;
         }
-        
     }
     return;
 }
-
-
 
 void send_thread_func(std::string msg, std::string tempip)
 {
@@ -134,10 +186,9 @@ void send_thread_func(std::string msg, std::string tempip)
         // Set the socket option for broadcasting
         socket.set_option(boost::asio::socket_base::broadcast(true));
         socket.set_option(boost::asio::socket_base::reuse_address(true));
-        udp::endpoint local_endpoint(boost::asio::ip::address::from_string(thisip), 0); // replace "192.168.1.5" with your desired local IP address
+        udp::endpoint local_endpoint(boost::asio::ip::address::from_string(thisip), 0); 
         socket.bind(local_endpoint);
 
-        
         std::string message = msg;
         std::array<char, 25> send_buffer;
         std::copy(message.begin(), message.end(), send_buffer.begin());
@@ -149,18 +200,46 @@ void send_thread_func(std::string msg, std::string tempip)
         }
 }
 
+void send_thread_func2()
+{
+    
+        boost::asio::io_context io_context;
+
+        udp::resolver resolver(io_context);
+        udp::endpoint broadcast_endpoint = *resolver.resolve(udp::v4(), remoteip, sRemotePort).begin();
+
+        udp::socket socket(io_context);
+        socket.open(udp::v4());
+        // Set the socket option for broadcasting
+        socket.set_option(boost::asio::socket_base::broadcast(true));
+        socket.set_option(boost::asio::socket_base::reuse_address(true));
+        udp::endpoint local_endpoint(boost::asio::ip::address::from_string(thisip), 0); 
+        socket.bind(local_endpoint);
+    while(sender_running)
+    {
+        std::string message = "";
+        std::array<char, ByteMessageSise> send_buffer;
+        std::copy(message.begin(), message.end(), send_buffer.begin());
+        socket.send_to(boost::asio::buffer(send_buffer), broadcast_endpoint);
+        message = "";
+        for (char& c : send_buffer) 
+        {
+            c = '\0';
+        }
+        std::this_thread::sleep_for(std::chrono::milliseconds((int64_t)loop_speed)); // wait for 1 second before sending next message
+    }
+}
 
 void receive_thread_func()
 {
     try
     {
         boost::asio::io_context io_context;
-
         // create socket for receiving broadcasts
         udp::socket receive_socket(io_context, udp::endpoint(udp::v4(), (unsigned short)port_no));
 
         // create buffer to receive data
-        std::array<char, 25> receive_buffer;
+        std::array<char, ByteMessageSise> receive_buffer;
         udp::endpoint sender_endpoint;
 
         // receive broadcast message in a loop
@@ -170,8 +249,11 @@ void receive_thread_func()
             receive_socket.receive_from(boost::asio::buffer(receive_buffer), sender_endpoint);
             // print received message
             std::string str = std::string(receive_buffer.data(), receive_buffer.size());
-            std::cout << str << std::endl;
             
+            if(bEcho)
+            {
+                std::cout << str << std::endl;
+            }
             
             Data.LoadString(str);
             
@@ -180,8 +262,16 @@ void receive_thread_func()
                 c = '\0';
             }
             str = "";
+            std::vector<std::string> parts = splitIt(Data.copyOfString(),',');
+            if(parts[1] == "L")
+            {
+                heartbeatMutex.LoadString(parts[1]);
+            }else
+            {
+                heartbeatMutex.LoadString("");
+            }
             
-            
+            //updatefromremote(parts);
         }
     }
     catch (std::exception& e)
@@ -192,15 +282,12 @@ void receive_thread_func()
 
 void send_quit()
 {
-
         boost::asio::io_context io_context;
 
         udp::resolver resolver(io_context);
         udp::endpoint broadcast_endpoint = *resolver.resolve(udp::v4(), "255.255.255.255", sLocalPort).begin();
-
         udp::socket socket(io_context);
         socket.open(udp::v4());
-
         // Set the socket option for broadcasting
         socket.set_option(boost::asio::socket_base::broadcast(true));
         socket.set_option(boost::asio::socket_base::reuse_address(true));
@@ -209,9 +296,8 @@ void send_quit()
         std::array<char, 4> send_buffer;
         std::copy(message.begin(), message.end(), send_buffer.begin());
 
-         socket.send_to(boost::asio::buffer(send_buffer), broadcast_endpoint);
+        socket.send_to(boost::asio::buffer(send_buffer), broadcast_endpoint);
 }
-
 
 void PrintData()
 {
@@ -222,7 +308,6 @@ void PrintData()
     {
         std::cout << "null" << std::endl;
     }
-    
 }
 
 void PrintDataBytes()
