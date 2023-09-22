@@ -1,9 +1,10 @@
+#include <vector>
+#include "udp.h"
 #include "ByteMsgv2.cpp"
 #include <iostream>
 #include <boost/asio.hpp>
 #include <thread>
 #include <mutex>
-#include <vector>
 #include <string.h>
 #include <cstdint>
 #include <cstring>
@@ -19,7 +20,7 @@ std::atomic<bool> cli_running(true);
 std::atomic<bool> sender_running(true);
 std::atomic<bool> heart_beat_running(true);
 
-std::atomic<bool> bEcho(true);
+std::atomic<bool> bEcho(false);
 
 
 std::mutex mutex;
@@ -44,8 +45,42 @@ ByteMessage heartbeatMutex(1);
 int main(int argc, char* argv[])
 {
         initMessages();
-        launchPad(argc,argv);
 
+        if(argc > 5)
+    {
+        thisip = argv[1];
+        sLocalPort = argv[2];
+        remoteip = argv[3];
+        sRemotePort = argv[4];
+        port_no = atoi(sLocalPort.c_str());
+        sessionLabel = argv[5];
+    }else
+    {
+        std::cout << "Ip Settings set to default." << std::endl;
+    }
+
+    std::cout << "Ip Address " <<  thisip << std::endl;
+    std::cout << "Port" <<  sLocalPort << std::endl;
+    std::cout << "Target Ip Address " <<  remoteip << std::endl;
+    std::cout << "Target Port " <<  sRemotePort << std::endl;
+    
+    Data.LoadString("");
+    heartbeatMutex.LoadString("");
+   // std::thread send_thread(send_thread_func2);
+    std::thread receive_thread(receive_thread_func);
+    std::thread mnloop(mainloop);
+    std::thread heart_beat(heartbeat);
+
+    // send_thread.join();
+    receive_thread.join();
+    mnloop.join();
+    heart_beat.join();
+    
+    //return;
+        //launchPad(argc,argv);
+
+
+    
     return 0;
 }
 
@@ -81,39 +116,6 @@ void heartbeat()
     }
 }
 
-void launchPad(int argc, char* argv[])
-{
-    if(argc > 5)
-    {
-        thisip = argv[1];
-        sLocalPort = argv[2];
-        remoteip = argv[3];
-        sRemotePort = argv[4];
-        port_no = atoi(sLocalPort.c_str());
-        sessionLabel = argv[5];
-    }else
-    {
-        std::cout << "Ip Settings set to default." << std::endl;
-    }
-
-    std::cout << "Ip Address " <<  thisip << std::endl;
-    std::cout << "Port" <<  sLocalPort << std::endl;
-    std::cout << "Target Ip Address " <<  remoteip << std::endl;
-    std::cout << "Target Port " <<  sRemotePort << std::endl;
-    
-    Data.LoadString("");
-    heartbeatMutex.LoadString("");
-   // std::thread send_thread(send_thread_func2);
-    std::thread receive_thread(receive_thread_func);
-    std::thread mnloop(mainloop);
-    std::thread heart_beat(heartbeat);
-
-    // send_thread.join();
-    receive_thread.join();
-    heart_beat.join();
-    mnloop.join();
-
-}
 
 void mainloop()
 {
@@ -162,6 +164,9 @@ void mainloop()
         {
             bool bEcho = true;
             std::cout << "ECHO ON" <<  std::endl;
+        }else if(command == "update")
+        {
+            updateTrackValues();
         }
         else
         {
@@ -190,7 +195,7 @@ void send_thread_func(std::string msg, std::string tempip)
         socket.bind(local_endpoint);
 
         std::string message = msg;
-        std::array<char, 25> send_buffer;
+        std::array<char, 1024> send_buffer;
         std::copy(message.begin(), message.end(), send_buffer.begin());
         socket.send_to(boost::asio::buffer(send_buffer), broadcast_endpoint);
         message = "";
@@ -239,7 +244,7 @@ void receive_thread_func()
         udp::socket receive_socket(io_context, udp::endpoint(udp::v4(), (unsigned short)port_no));
 
         // create buffer to receive data
-        std::array<char, ByteMessageSise> receive_buffer;
+        std::array<char, ByteMessageSise + 1024> receive_buffer;
         udp::endpoint sender_endpoint;
 
         // receive broadcast message in a loop
@@ -254,14 +259,18 @@ void receive_thread_func()
             {
                 std::cout << str << std::endl;
             }
-            
-            Data.LoadString(str);
+            if(str.substr(0,3) == "quit" || str[0] == 'q' || str[0] == 'e')
+            {
+                break;
+            }
+            Data.LoadString(str.substr(0, ByteMessageSise -1));
             
             for (char& c : receive_buffer) 
             {
                 c = '\0';
             }
             str = "";
+            
             std::vector<std::string> parts = splitIt(Data.copyOfString(),',');
             if(parts[1] == "L")
             {
@@ -285,7 +294,7 @@ void send_quit()
         boost::asio::io_context io_context;
 
         udp::resolver resolver(io_context);
-        udp::endpoint broadcast_endpoint = *resolver.resolve(udp::v4(), "255.255.255.255", sLocalPort).begin();
+        udp::endpoint broadcast_endpoint = *resolver.resolve(udp::v4(), thisip, sLocalPort).begin();
         udp::socket socket(io_context);
         socket.open(udp::v4());
         // Set the socket option for broadcasting
@@ -293,7 +302,7 @@ void send_quit()
         socket.set_option(boost::asio::socket_base::reuse_address(true));
         std::string sUE = "quit";
         std::string message = sUE;
-        std::array<char, 4> send_buffer;
+        std::array<char, 1024> send_buffer;
         std::copy(message.begin(), message.end(), send_buffer.begin());
 
         socket.send_to(boost::asio::buffer(send_buffer), broadcast_endpoint);

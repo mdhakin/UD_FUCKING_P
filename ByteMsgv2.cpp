@@ -1,7 +1,7 @@
 #include <vector>
 #include <mutex>
 #include <string>
-#include "udp.h"
+
 
 class ByteMessage {
 private:
@@ -35,11 +35,16 @@ public:
         len = 25;
         byteArray.resize(len, 0);
     }
+    // void WriteData(int index, char data) {
+    //     std::lock_guard<std::mutex> guard(_lock);
+    //     byteArray[index] = data;
+    // }
     void WriteData(int index, char data) {
+    if (index >= 0 && index < len) {
         std::lock_guard<std::mutex> guard(_lock);
         byteArray[index] = data;
     }
-
+}
     std::vector<char> copyOfInternalByteArray() {
         std::lock_guard<std::mutex> guard(_lock);
         std::vector<char> result(len);
@@ -52,7 +57,9 @@ public:
     void LoadString(const std::string& str) {
         emptyArray();
         std::vector<char> bMsg = strToCharVector(str);
+        
         len = str.size();
+        byteArray.resize(len, 0);
         for (int i = 0; i < bMsg.size(); i++) {
             WriteData(i, bMsg[i]);
         }
@@ -81,11 +88,17 @@ public:
         std::string temp = copyOfString();
         return temp.size();
     }
-
     char ReadData(int index) {
-        std::lock_guard<std::mutex> guard(_lock);
-        return byteArray[index];
+        if (index >= 0 && index < len) {
+            std::lock_guard<std::mutex> guard(_lock);
+            return byteArray[index];
+        }
+    return '\0';  // or some other default value
     }
+    // char ReadData(int index) {
+    //     std::lock_guard<std::mutex> guard(_lock);
+    //     return byteArray[index];
+    // }
 
     std::string copyOfByteString() {
         std::lock_guard<std::mutex> guard(_lock);

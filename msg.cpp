@@ -95,10 +95,6 @@ void initMessages()
     std::string M114data = formatErrorMessage("M114","C","err0",errs,"N");
     M114.LoadString(M114data);
 
-    
-    
-
-    
     frames[0] = &M100;
     frames[1] = &M101;
     frames[2] = &M102;
@@ -115,7 +111,18 @@ void initMessages()
     frames[13] = &M113;
     frames[14] = &M114;
 
-   
+}
+
+void updateTrackValues()
+{
+    std::string M100L = M100.copyOfString();
+    std::vector<std::string> parts = splitIt(M100L,',');
+
+    std::cout << parts[0] << std::endl;
+    std::cout << parts[1] << std::endl;
+    std::cout << parts[2] << std::endl;
+    std::cout << parts[3] << std::endl;
+    std::cout << parts[4] << std::endl;
 
 }
 

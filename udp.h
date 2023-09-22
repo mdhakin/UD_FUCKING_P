@@ -4,7 +4,7 @@
 
 
 const int mesSize = 25;
-
+void heartbeat();
 void mainloop();
 void send_thread_func(std::string msg, std::string tempip);
 void receive_thread_func();
@@ -12,7 +12,7 @@ void send_quit();
 void PrintData();
 void PrintDataBytes();
 void PrintDataSize();
-void launchPad(int argc, char* argv[]);
+
 void printCoreData();
 
 std::vector<std::string> splitIt(const std::string &s, char delimiter) {
