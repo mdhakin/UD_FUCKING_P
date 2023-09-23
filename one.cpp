@@ -130,10 +130,10 @@ void mainloop()
         if (command == "quit" || command == "q" || command == "e")
         {
             std::cout << "quit " << std::endl;
-            sender_running = false;
-            receiver_running = false;
-            cli_running = false;
-            heart_beat_running = false;
+            sender_running.store(false);
+            receiver_running.store(false);
+            cli_running.store(false);
+            heart_beat_running.store(false);
             send_quit();
             std::this_thread::sleep_for(std::chrono::milliseconds((int64_t)20));
             break;
@@ -158,11 +158,11 @@ void mainloop()
             std::cout << "Target Port " <<  sRemotePort << std::endl;
         }else if(command == "echooff")
         {
-            bool bEcho = false;
+            bEcho.store(false);
             std::cout << "ECHO OFF" <<  std::endl;
         }else if(command == "echoon")
         {
-            bool bEcho = true;
+            bEcho.store(true);
             std::cout << "ECHO ON" <<  std::endl;
         }else if(command == "update")
         {
@@ -269,16 +269,22 @@ void receive_thread_func()
             {
                 c = '\0';
             }
-            str = "";
             
-            std::vector<std::string> parts = splitIt(Data.copyOfString(),',');
-            if(parts[1] == "L")
+            if(str.substr(0,2) == "M1")
             {
-                heartbeatMutex.LoadString(parts[1]);
+                std::vector<std::string> parts = splitIt(Data.copyOfString(),',');
+                if(parts[1] == "L")
+                {
+                    heartbeatMutex.LoadString(parts[1]);
+                }else
+                {
+                    heartbeatMutex.LoadString("");
+                }
             }else
             {
-                heartbeatMutex.LoadString("");
+                std::cout << str.substr(0,1) << std::endl;
             }
+            str = "";
             
             //updatefromremote(parts);
         }
