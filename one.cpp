@@ -23,6 +23,7 @@ std::atomic<bool> heart_beat_running(true);
 std::atomic<bool> bEcho(false);
 
 // git test
+// git test 2
 
 std::mutex mutex;
 std::string sessionLabel = "default";
