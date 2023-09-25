@@ -14,7 +14,7 @@
 using boost::asio::ip::udp;
 
 const int ByteMessageSise = 25;
-
+int loop_speed = 20;
 std::atomic<bool> receiver_running(true);
 std::atomic<bool> cli_running(true);
 std::atomic<bool> sender_running(true);
@@ -22,8 +22,6 @@ std::atomic<bool> heart_beat_running(true);
 
 std::atomic<bool> bEcho(false);
 
-// git test
-// git test 2
 
 std::mutex mutex;
 std::string sessionLabel = "default";
@@ -35,7 +33,7 @@ std::string sRemotePort = "12346";
 
 
 int port_no = 12345;
-int loop_speed = 20;
+
 int64_t heartbeatloopspeed = 1500;
 int toggleVale = 1;
 bool laptopconnected = false;
