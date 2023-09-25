@@ -1,6 +1,6 @@
 #include <iomanip>
 #include <sstream>
-
+#include <iostream>
 
 
 const int mesSize = 25;
@@ -38,4 +38,8 @@ std::string formatInt(int value, int width = 5) {
     return oss.str();
 }
 
+void clearTerm()
+{
+    std::cout << "\033c" << std::flush;
+}
 
