@@ -167,7 +167,7 @@ void mainloop()
         }else if(command == "update")
         {
             updateTrackValues();
-        }else if(command == "clear")
+        }else if(command == "cls")
         {
             clearTerm();
         }
