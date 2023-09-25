@@ -223,14 +223,24 @@ void send_thread_func2()
     while(sender_running)
     {
         std::string message = "";
-        std::array<char, ByteMessageSise> send_buffer;
-        std::copy(message.begin(), message.end(), send_buffer.begin());
-        socket.send_to(boost::asio::buffer(send_buffer), broadcast_endpoint);
-        message = "";
-        for (char& c : send_buffer) 
+        for(int i = 0;i<15;i++)
         {
-            c = '\0';
+            std::string message = frames[i]->copyOfString();
+            std::array<char, 1024> send_buffer;
+            std::copy(message.begin(), message.end(), send_buffer.begin());
+            socket.send_to(boost::asio::buffer(send_buffer), broadcast_endpoint);
+            message = "";
+            std::this_thread::sleep_for(std::chrono::milliseconds((int64_t)9)); // wait for 1 second before sending next message
         }
+        //
+        // std::array<char, 1024> send_buffer;
+        // std::copy(message.begin(), message.end(), send_buffer.begin());
+        // socket.send_to(boost::asio::buffer(send_buffer), broadcast_endpoint);
+        message = "";
+        // for (char& c : send_buffer) 
+        // {
+        //     c = '\0';
+        // }
         std::this_thread::sleep_for(std::chrono::milliseconds((int64_t)loop_speed)); // wait for 1 second before sending next message
     }
 }
