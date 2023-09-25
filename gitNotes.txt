@@ -1,0 +1,15 @@
+mhakin@debianMSI:~/Documents/code/c++/UD_FUCKING_P$ git add .
+mhakin@debianMSI:~/Documents/code/c++/UD_FUCKING_P$ git commit -m "Second From Debian"
+[master dd96be8] Second From Debian
+ 1 file changed, 1 insertion(+)
+mhakin@debianMSI:~/Documents/code/c++/UD_FUCKING_P$ git push origin master
+Enumerating objects: 5, done.
+Counting objects: 100% (5/5), done.
+Delta compression using up to 16 threads
+Compressing objects: 100% (3/3), done.
+Writing objects: 100% (3/3), 310 bytes | 310.00 KiB/s, done.
+Total 3 (delta 2), reused 0 (delta 0), pack-reused 0
+remote: Resolving deltas: 100% (2/2), completed with 2 local objects.
+To github.com:mdhakin/UD_FUCKING_P.git
+   407b535..dd96be8  master -> master
+mhakin@debianMSI:~/Documents/code/c++/UD_FUCKING_P$ 
