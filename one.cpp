@@ -30,7 +30,7 @@ std::string remoteip = "255.255.255.255";
 std::string sLocalPort = "12345";
 std::string sRemotePort = "12346";
 
-
+// test from sbc
 
 int port_no = 12345;
 
