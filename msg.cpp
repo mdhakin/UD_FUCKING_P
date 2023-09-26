@@ -19,8 +19,8 @@ ByteMessage M112(mesSize);  // crawler stste
 ByteMessage M113(mesSize);  // voltage
 ByteMessage M114(mesSize);  // error 
 
-ByteMessage* frames[15];
-
+//ByteMessage* frames[15];
+std::vector<ByteMessage*> frames(15);
 
 void printCoreData()
 {

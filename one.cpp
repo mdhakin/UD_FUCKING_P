@@ -135,7 +135,9 @@ void mainloop()
             cli_running.store(false);
             heart_beat_running.store(false);
             send_quit();
-            std::this_thread::sleep_for(std::chrono::milliseconds((int64_t)20));
+            clearTerm();
+            std::this_thread::sleep_for(std::chrono::milliseconds((int64_t)5));
+            std::cout << "Bye!!\n" << std::endl;
             break;
         }else if(command == "data")
         {
@@ -250,6 +252,7 @@ void send_thread_func2()
 
 void receive_thread_func()
 {
+    int messagect = 0;
     try
     {
         boost::asio::io_context io_context;
@@ -298,7 +301,12 @@ void receive_thread_func()
                 std::cout << str.substr(0,1) << std::endl;
             }
             str = "";
-            
+            messagect++;
+            if(messagect > 200 && bEcho)
+            {
+                clearTerm();
+                messagect = 0;
+            }
             //updatefromremote(parts);
         }
     }
