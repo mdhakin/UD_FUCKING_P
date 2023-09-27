@@ -158,11 +158,11 @@ void mainloop()
             std::cout << "Port" <<  sLocalPort << std::endl;
             std::cout << "Target Ip Address " <<  remoteip << std::endl;
             std::cout << "Target Port " <<  sRemotePort << std::endl;
-        }else if(command == "echooff")
+        }else if(command == "ef")
         {
             bEcho.store(false);
             std::cout << "ECHO OFF" <<  std::endl;
-        }else if(command == "echoon")
+        }else if(command == "eo")
         {
             bEcho.store(true);
             std::cout << "ECHO ON" <<  std::endl;
@@ -181,6 +181,16 @@ void mainloop()
         }
     }
     return;
+}
+
+void printHelp()
+{
+    std::cout << "ef = echo off" <<  std::endl;
+    std::cout << "eo = echo on" <<  std::endl;
+    std::cout << "cls = clear terminal" <<  std::endl;
+    std::cout << "settings = ip addresses and ports" << std::endl;
+    std::cout << "databytes print byte string" << std::endl;
+    std::cout << "data = print data structure" << std::endl;
 }
 
 void send_thread_func(std::string msg, std::string tempip)
