@@ -12,7 +12,7 @@ void send_quit();
 void PrintData();
 void PrintDataBytes();
 void PrintDataSize();
-
+void printHelp();
 void printCoreData();
 
 std::vector<std::string> splitIt(const std::string &s, char delimiter) {

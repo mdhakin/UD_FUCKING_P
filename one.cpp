@@ -172,6 +172,9 @@ void mainloop()
         }else if(command == "cls")
         {
             clearTerm();
+        }else if (command == "help")
+        {
+            printHelp();
         }
         else
         {
